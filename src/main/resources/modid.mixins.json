@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.fabricmc.wolftech.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "Command"
+  ],
+  "server": [
+  ],
+  "client": [
+    "ExampleMixin",
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

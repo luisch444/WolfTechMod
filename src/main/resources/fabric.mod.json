@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "wolftech",
+  "version": "${version}",
+
+  "name": "WolfTech",
+  "description": "Mod para el servidor WolfTech",
+  "authors": [
+    "luisch444"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/modid/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.fabricmc.wolftech.WolfTech"
+    ]
+  },
+  "mixins": [
+    "modid.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "fabric": "",
+    "minecraft": "1.16.x"
+  },
+  "suggests": {
+    "another-mod": ""
+  }
+}
