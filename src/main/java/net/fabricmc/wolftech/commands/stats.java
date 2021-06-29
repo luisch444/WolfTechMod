@@ -16,7 +16,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.minecraft.block.Block;
 import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.command.argument.ItemStackArgument;
 import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.entity.Entity;
@@ -32,13 +31,11 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.stat.ServerStatHandler;
 import net.minecraft.stat.Stat;
-import net.minecraft.stat.StatType;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.level.ServerWorldProperties;
 
 public class stats {
@@ -68,53 +65,30 @@ public class stats {
 			    			}catch (Exception e){
 			    				context.getSource().sendFeedback(new TranslatableText("error de operacion! puede ser que ya estes en el team correcto").formatted(Formatting.GREEN), false);
 			    			}
-			    			
 			    			return 1;
 			    		})
-			    		
 			    		.then(argument("item", ItemStackArgumentType.itemStack())
 			    .executes((com.mojang.brigadier.Command<ServerCommandSource>)context ->{
 			    	String type = StringArgumentType.getString(context, "type");
-			    	switch(type){
-			    		
-			    	
-			    	case ("mined") :
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "mined", null);
-			    		break;
-			    	case("used"):
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "used", null);
-			    		break;
-			    	case("broken"):
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "broken", null);
-			    		break;
-			    	case("crafted"):
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "crafted", null);
-			    		break;
-			    	case("dropped"):
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "dropped", null);
-			    		break;
-			    	case("picked_up"):
-			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "picked_up", null);
-			    		break;
-			    	case("custom"):
-			    		return 0;
-			    	default: 
+			    	if(type.equalsIgnoreCase("mined")) {
+			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "mined");
+			    	}else if(type.equalsIgnoreCase("used")){
+			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "used");
+			    	}else if(type.equalsIgnoreCase("broken")){
+			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "broken");
+			    	}else if(type.equalsIgnoreCase("crafted")){
+			    		showSidebar(context.getSource(), ItemStackArgumentType.getItemStackArgument(context, "item"), "crafted");
+			    	}else if(type.equalsIgnoreCase("none")){
+			    		Scoreboard scoreboard = context.getSource().getMinecraftServer().getScoreboard();
+			    		Team team = scoreboard.getPlayerTeam(context.getSource().getPlayer().getEntityName());
+			    		scoreboard.addPlayerToTeam(context.getSource().getPlayer().getEntityName(), scoreboard.getTeam(team.getName().replace("2", "")));
+			    	}else {
 			    		context.getSource().sendFeedback(new TranslatableText("Syntaxys erronea! porfavor revisala").formatted(Formatting.GREEN), false);
 			    		return 1;
 			    	}
 			    	return 1;
-			    }))
-			    		
-			    		.then(argument("Statscustom", IdentifierArgumentType.identifier())
-			    				.suggests((a, b) -> CommandSource.suggestMatching(Statscustom(), b)))
-			    		.executes((com.mojang.brigadier.Command<ServerCommandSource>)context ->{
-			    			context.getSource().sendFeedback(new TranslatableText("1").formatted(Formatting.GREEN), false);
-							showSidebar(context.getSource(), null, "custom", IdentifierArgumentType.getIdentifier(context, "Statscustom"));
-							context.getSource().sendFeedback(new TranslatableText("custom").formatted(Formatting.GREEN), false);
-							return 0;
-			    		})
-			    		
-			    		)
+			    	
+			    })))
 			    
 				
 				);
@@ -124,33 +98,17 @@ public class stats {
 	
 	public static Collection<String> types() {
 		
-		Set<String> types = Sets.newLinkedHashSet(Arrays.asList("used", "mined", "broken","crafted" ,"dropped" ,"picked_up", "show", "none", "custom"));
-		return types;
-	}
-	
-	public static Collection<String> Statscustom() {
-		
-		Set<String> types = Sets.newLinkedHashSet(Arrays.asList());
-		Stats.CUSTOM.forEach(stat ->{
-			types.add(stat.getName().replace("minecraft.custom:", ""));
-		});
+		Set<String> types = Sets.newLinkedHashSet(Arrays.asList("used", "mined", "broken", "crafted", "show", "none"));
 		return types;
 	}
 	
 	
-	//all this code bellow is copy (and a little modify) of kahzerx in mod of bastion (https://github.com/Kahzerx/BastionSMP/blob/f43e65d275fc75ca72a55cb2f86221c673b0c78f/src/main/java/bastion/commands/SBCommand.java#L57)
+	//all this code bellow is copy of kahzerx in mod of bastion (https://github.com/Kahzerx/BastionSMP/blob/f43e65d275fc75ca72a55cb2f86221c673b0c78f/src/main/java/bastion/commands/SBCommand.java#L57)
 	
-	public static int showSidebar(ServerCommandSource source, ItemStackArgument item, String type, Identifier Stat) {
-		source.sendFeedback(new TranslatableText("2").formatted(Formatting.GREEN), false);
+	public static int showSidebar(ServerCommandSource source, ItemStackArgument item, String type) {
 		Scoreboard scoreboard = source.getMinecraftServer().getScoreboard();
-		String objectiveName;
-		Item minecraftItem = Item.byRawId(0);
-		if(item!=null) {
-			minecraftItem = item.getItem();
-			objectiveName = type + "." + Item.getRawId(minecraftItem);
-		}else {
-			objectiveName = type + "." + Stat.toString().replace("minecraft:minecraft.", "");
-		}
+		Item minecraftItem = item.getItem();
+		String objectiveName = type + "." + Item.getRawId(minecraftItem);
 		ScoreboardObjective scoreboardObjective = scoreboard.getNullableObjective(objectiveName);
 
 		Entity entity = source.getEntity();
@@ -165,35 +123,19 @@ public class stats {
 				scoreboard.setObjectiveSlot(18, scoreboardObjective);
 			}
 		} else {
-			String criteriaName = "minecraft.used:minecraft.air";
-			String capitalize = "used";
-			String displayName = "";
-			if(item!=null) {
-				source.sendFeedback(new TranslatableText("2.2").formatted(Formatting.GREEN), false);
-				criteriaName = "minecraft." + type + ":minecraft." + item.getItem().toString();
-				capitalize = type.substring(0, 1).toUpperCase() + type.substring(1);
-				displayName = Formatting.AQUA+capitalize + " " +Formatting.GREEN+ minecraftItem.toString().replaceAll("_", " ");
-			}else {
-				source.sendFeedback(new TranslatableText("2.1").formatted(Formatting.GREEN), false);
-				criteriaName = "minecraft." + type + ":minecraft."+Stat.toString().replace("minecraft:minecraft.", "");
-				source.sendFeedback(new TranslatableText("2.1.1"+Stat.toString()).formatted(Formatting.GREEN), false);
-				capitalize = type.substring(0, 1).toUpperCase() + type.substring(1);
-				source.sendFeedback(new TranslatableText("2.1.2").formatted(Formatting.GREEN), false);
-				displayName = Formatting.AQUA+capitalize + " " +Formatting.GREEN+ Stat.toString().replace("minecraft:minecraft.", "").replaceAll("_", " ");
-				source.sendFeedback(new TranslatableText("2.1.3").formatted(Formatting.GREEN), false);
-			}
+			String criteriaName = "minecraft." + type + ":minecraft." + item.getItem().toString();
+			String capitalize = type.substring(0, 1).toUpperCase() + type.substring(1);
+			String displayName = Formatting.AQUA+capitalize + " " +Formatting.GREEN+ minecraftItem.toString().replaceAll("_", " ");
 			ScoreboardCriterion criteria = ScoreboardCriterion.createStatCriterion(criteriaName).get();
-			source.sendFeedback(new TranslatableText("2.1.4 " + displayName).formatted(Formatting.GREEN), false);
-			source.sendFeedback(new TranslatableText("2.1.4 " + objectiveName + criteria.getName()).formatted(Formatting.GREEN), false);
+
 			scoreboard.addObjective(objectiveName, criteria, new LiteralText(displayName), criteria.getCriterionType());
-			source.sendFeedback(new TranslatableText("2.1.5").formatted(Formatting.GREEN), false);
+
 			ScoreboardObjective newScoreboardObjective = scoreboardObjective = scoreboard.getNullableObjective(objectiveName);
 			try {
-				source.sendFeedback(new TranslatableText("2.2").formatted(Formatting.GREEN), false);
-				initialize(source, newScoreboardObjective, minecraftItem, type, Stat);
+				initialize(source, newScoreboardObjective, minecraftItem, type);
 			} catch (Exception e) {
 				scoreboard.removeObjective(newScoreboardObjective);
-				text = new LiteralText("Ha ocurrido un error al momento de seleccionar un scoreboard, inténtelo de nuevo.").formatted(Formatting.RED);
+				text = new LiteralText("Ha ocurrido un error al momento de seleccionar un scoreboard, intde nuevo.").formatted(Formatting.RED);
 				assert entity != null;
 				source.getMinecraftServer().getPlayerManager().broadcastChatMessage(text, MessageType.CHAT, entity.getUuid());
 
@@ -211,10 +153,9 @@ public class stats {
 		return 1;
 	}
 	
-	public static void initialize(ServerCommandSource source, ScoreboardObjective scoreboardObjective, Item item, String type, Identifier Stat) {
+	public static void initialize(ServerCommandSource source, ScoreboardObjective scoreboardObjective, Item item, String type) {
 		Scoreboard scoreboard = source.getMinecraftServer().getScoreboard();
 		MinecraftServer server = source.getMinecraftServer();
-		source.sendFeedback(new TranslatableText("3").formatted(Formatting.GREEN), false);
 
 		File file = new File(((ServerWorldProperties)server.getOverworld().getLevelProperties()).getLevelName(), "stats");
 		File[] stats = file.listFiles();
@@ -236,15 +177,6 @@ public class stats {
 				finalStat = Stats.MINED.getOrCreateStat(Block.getBlockFromItem(item));
 			} else if (type.equalsIgnoreCase("used")) {
 				finalStat = Stats.USED.getOrCreateStat(item);
-			}else if (type.equalsIgnoreCase("crafted")) {
-				finalStat = Stats.CRAFTED.getOrCreateStat(item);
-			}else if (type.equalsIgnoreCase("dropped")) {
-				finalStat = Stats.DROPPED.getOrCreateStat(item);
-			}else if (type.equalsIgnoreCase("picked_up")) {
-				finalStat = Stats.PICKED_UP.getOrCreateStat(item);
-			}else if (type.equalsIgnoreCase("custom")) {
-				finalStat = Stats.CUSTOM.getOrCreateStat(Stat);
-				source.sendFeedback(new TranslatableText("4").formatted(Formatting.GREEN), false);
 			}
 
 			String playerName;
