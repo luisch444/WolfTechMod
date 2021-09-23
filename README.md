@@ -4,6 +4,7 @@ created by luisch444
 
 The mod have the following things:
 -/enderchest <player> command --> The command emptys a player enderchest, only work if the player is online (you can spawn it with carpet mod)
+
 -/stats <show|none|stat-type> (item) command --> The command adds a scoreboard stats show, requires 2 teams name and name2 (a part of the function is coppied from kahzerx Bastion mod https://github.com/Kahzerx/BastionSMP/blob/master/src/main/java/bastion/commands/SBCommand.java) In this version de stat type are: mined, used, broken, crafted (I working on the other types)
 
   Needs FabricAPI in the current realese
